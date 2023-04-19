@@ -87,7 +87,13 @@ if __name__ == '__main__':
     port = int(input("Host Port: "))
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.connect((host, port))
+    server.settimeout(5)
+    try:
+        server.connect((host, port))
+    except socket.error as exc:
+        if type(exc) is TimeoutError:
+            print("Connection Timed Out")
+        sys.exit()
 
     rsa_key = server.recv(1024)
     rsa_key = RSA.import_key(rsa_key.decode().strip())

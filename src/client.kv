@@ -1,2 +1,75 @@
 #:kivy 1.10
 
+<SplashScreen>:
+    MDLabel:
+        text: "Splash"
+
+<LoginScreen>:
+    MDFloatLayout:
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            size_hint: 1, 1
+            pos_hint: {'center_x': 0.5,'center_y': 0.9}
+            MDLabel:
+                text: ""
+            MDLabel:
+                text: "Server Login"
+            MDLabel:
+                text: ""
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.125)
+            pos_hint: {'center_x': 0.5,'center_y': 0.7}
+            MDLabel:
+                text: "IP"
+                halign: 'center'
+                size_hint: 1, 1
+            MDTextField:
+                id: ip
+                hint_text: "255.255.255.255"
+                size_hint: 2, 1
+                halign: 'center'
+                size: self.size
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.125)
+            pos_hint: {'center_x': 0.5,'center_y': 0.6}
+            MDLabel:
+                text: "Port"
+                halign: 'center'
+                size_hint: 1, 1
+            MDTextField:
+                id: port
+                hint_text: "0-65536"
+                size_hint: 2, 1
+                halign: 'center'
+                size: self.size
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.125)
+            pos_hint: {'center_x': 0.5,'center_y': 0.5}
+            MDLabel:
+                text: "Password"
+                halign: 'center'
+                size_hint: 1, 1
+            MDTextField:
+                id: password
+                size_hint: 2, 1
+                halign: 'center'
+                size: self.size
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.125)
+            pos_hint: {'center_x': 0.5,'center_y': 0.4}
+            MDLabel:
+                text: ""
+            MDRaisedButton:
+                text: "Login"
+                on_press: root.button_press()
+            MDLabel:
+                test: ""

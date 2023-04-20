@@ -33,11 +33,14 @@ class LoginScreen(Screen):
     success_dialog = None
     incorrect_dialog = None
 
+    def login_success(self):
+        self.success_dialog.dismiss()
+        self.manager.current = 'home'
+
     def login_attempt(self):
         login_value = connection.login(self.ip_address, self.port, self.password)
         self.dialog.dismiss()
         if login_value[0]:
-            print(login_value[1])
             if not self.success_dialog:
                 self.success_dialog = MDDialog(
                     text="Login Successful",
@@ -82,7 +85,6 @@ class LoginScreen(Screen):
             try:
                 ipv4.ip_address(self.ip_address)
             except ValueError:
-                print(self.ip_address)
                 self.error = "Not a valid IP Address"
                 if not self.ip_error_dialog:
                     self.ip_error_dialog = MDDialog(
@@ -135,8 +137,9 @@ class LoginScreen(Screen):
             self.dialog.open()
             Clock.schedule_once(lambda _: self.login_attempt(), 2)
 
-    
-
+class HomeScreen(Screen):
+    def on_enter(self):
+        pass
             
 
 class ClientApp(MDApp):
@@ -146,6 +149,7 @@ class ClientApp(MDApp):
         sm = ScreenManager(transition=NoTransition())
         sm.add_widget(SplashScreen(name="splash"))
         sm.add_widget(LoginScreen(name="login"))
+        sm.add_widget(HomeScreen(name="home"))
         return sm
     
     def on_stop(self):

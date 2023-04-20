@@ -50,7 +50,7 @@ class ConnectionManager:
         cipher_text = self.session_cipher.encrypt(data)
         cipher_text_b32 = base64.b32encode(cipher_text)
         size_difference = 1024 - (sys.getsizeof(cipher_text_b32) % 1024)
-        cipher_padded = (cipher_text_b32.decode() + " "*size_difference)
+        cipher_padded = (cipher_text_b32.decode() + " "*size_difference).encode()
         self._increment_nonce()
         return cipher_padded
     
@@ -94,7 +94,6 @@ class ConnectionManager:
             self.nonce = self.nonce_int.to_bytes(32, 'big')
     
             self.session_cipher = AES.new(self.session_key, AES.MODE_EAX, self.nonce)
-
             self.server.send(self._encrypt_with_padding(self.password.encode()))
 
             response = self._decrypt_with_padding(self.server.recv(1024)).decode()

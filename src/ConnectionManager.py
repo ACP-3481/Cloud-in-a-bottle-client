@@ -127,6 +127,30 @@ class ConnectionManager:
                 self.message = ""
                 return True, login_complete
         
-    
+    def update(self):
+        pass
+
+    def upload(self):
+        pass
+
+    def download(self):
+        pass
+
+    def register_key(self, key):
+        if len(key) < 12:
+            return "Key must be at least 12 characters long"
+        elif not re.search("[a-z]", key):
+            return "Key must contain a lowercase letter"
+        elif not re.search("[A-Z]", key):
+            return "Key must contain an uppercase letter"
+        elif not re.search("[0-9]", key):
+            return "Key must contain a number"
+        elif not re.search("[ !\"#$%&'()*+,-./:;\\<=>?@[\]^_`{|}~]" , key):
+            return "Key must contain a special character"
+        else:
+            return "Key registered successfully"
+        
+        
+
     def quit(self):
         self.quit = True

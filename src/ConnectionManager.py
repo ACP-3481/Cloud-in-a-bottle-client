@@ -13,6 +13,7 @@ import re
 import hashlib
 import threading
 import time
+from typing import Optional
 
 
 class ConnectionManager:
@@ -32,6 +33,8 @@ class ConnectionManager:
         self.nonce = None
         self.session_cipher = None
         self.session_key = None
+        self.client_key = None
+        self.client_cipher = None
 
         main = threading.Thread(target=self.main_process)
         main.start()
@@ -58,6 +61,12 @@ class ConnectionManager:
         decrypted = self.session_cipher.decrypt(base64.b32decode(data.decode().strip().encode()))
         self._increment_nonce()
         return decrypted
+    
+    def _renew_client_cipher(self, nonce : Optional[int]=None):
+        if nonce is not None:
+            self.client_cipher = AES.new(self.client_key, AES.MODE_EAX, nonce)
+        else:
+            self.client_cipher = AES.new(self.client_key, AES.MODE_EAX)
 
 
 
@@ -136,7 +145,7 @@ class ConnectionManager:
     def download(self):
         pass
 
-    def register_key(self, key):
+    def register_key(self, key: str):
         if len(key) < 12:
             return "Key must be at least 12 characters long"
         elif not re.search("[a-z]", key):
@@ -148,6 +157,8 @@ class ConnectionManager:
         elif not re.search("[ !\"#$%&'()*+,-./:;\\<=>?@[\]^_`{|}~]" , key):
             return "Key must contain a special character"
         else:
+            self.client_key = hashlib.sha256(key.encode()).digest()
+            self.client_cipher = AES.new(self.client_key, AES.MODE_EAX)
             return "Key registered successfully"
         
         

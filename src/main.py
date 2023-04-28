@@ -32,6 +32,53 @@ class LoginScreen(Screen):
     timeout_dialog = None
     success_dialog = None
     incorrect_dialog = None
+    key_errors = ["Key must be at least 12 characters long","Key must contain a lowercase letter","Key must contain an uppercase letter","Key must contain a number","Key must contain a special character"]
+    def on_pre_enter(self):
+        self.length_error_dialog = MDDialog(
+            text=self.key_errors[0],
+            buttons=[
+                MDRaisedButton(
+                    text="Ok",
+                    on_press= lambda _: self.length_error_dialog.dismiss()
+                )
+            ]
+        )
+        self.l_case_dialog = MDDialog(
+            text=self.key_errors[1],
+            buttons=[
+                MDRaisedButton(
+                    text="Ok",
+                    on_press= lambda _: self.l_case_dialog.dismiss()
+                )
+            ]
+        )
+        self.u_case_dialog = MDDialog(
+            text=self.key_errors[2],
+            buttons=[
+                MDRaisedButton(
+                    text="Ok",
+                    on_press= lambda _: self.u_case_dialog.dismiss()
+                )
+            ]
+        )
+        self.num_error_dialog = MDDialog(
+            text=self.key_errors[3],
+            buttons=[
+                MDRaisedButton(
+                    text="Ok",
+                    on_press= lambda _: self.num_error_dialog.dismiss()
+                )
+            ]
+        )
+        self.spec_error_dialog = MDDialog(
+            text=self.key_errors[4],
+            buttons=[
+                MDRaisedButton(
+                    text="Ok",
+                    on_press= lambda _: self.spec_error_dialog.dismiss()
+                )
+            ]
+        )
 
     def login_success(self):
         self.success_dialog.dismiss()
@@ -77,6 +124,7 @@ class LoginScreen(Screen):
                         ]
                     )
                 self.incorrect_dialog.open()
+
 
     def button_press(self):
         self.error = ""
@@ -128,6 +176,24 @@ class LoginScreen(Screen):
                     )
                 self.range_error_dialog.open()
                 break
+            self.error = connection.register_key(self.ids.key.text)
+            if self.error != "Key registered successfully":
+                index = self.key_errors.index(self.error)
+                match index:
+                    case 0:
+                        self.length_error_dialog.open()
+                    case 1:
+                        self.l_case_dialog.open()
+                    case 2:
+                        self.u_case_dialog.open()
+                    case 3:
+                        self.num_error_dialog.open()
+                    case 4:
+                        self.spec_error_dialog.open()
+                break
+            else:
+                self.error = ""
+
         self.password = self.ids.password.text
         if self.error == "":
             if not self.dialog:

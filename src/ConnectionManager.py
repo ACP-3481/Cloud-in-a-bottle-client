@@ -36,6 +36,10 @@ class ConnectionManager:
         self.client_key = None
         self.client_cipher = None
 
+        self.update_dict = None
+        self.filenames = None
+        self.filename_b32_list = None
+
         main = threading.Thread(target=self.main_process)
         main.start()
 
@@ -137,7 +141,21 @@ class ConnectionManager:
                 return True, login_complete
         
     def update(self):
-        pass
+        self.server.send(self._encrypt_with_padding(b'Update'))
+        update_size = int(self._decrypt_with_padding(self.server.recv(1024)).decode())
+        update_data = self._decrypt_with_padding(self.server.recv(update_size).decode())
+        self.update_dict = json.loads(update_data)
+        
+        self.filenames = []
+        self.filename_b32_list = []
+        for item in self.update_dict:
+            self.filename_b32_list.append(item)
+            filename_bytes = base64.b32decode(item)
+            filename_nonce_bytes = base64.b32decode(self.update_dict[item])
+            self._renew_client_cipher(filename_nonce_bytes)
+            self.filenames.append(self.client_cipher.decrypt(filename_bytes).decode())
+        
+        self._renew_client_cipher()
 
     def upload(self):
         pass

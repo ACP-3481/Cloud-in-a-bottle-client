@@ -140,6 +140,16 @@ if __name__ == '__main__':
     server.send(encrypt_with_padding(password.encode(), session_cipher))
     increment_nonce()
 
+    response = decrypt_with_padding(server.recv(1024), session_cipher).decode()
+    increment_nonce()
+    
+    if response == "Incorrect Password":
+        sys.exit()
+    elif response == "Correct Password":
+        print(response)
+    else:
+        sys.exit()
+
     my_password = ""
     print("""Input a password to encrypt files with.
         It must be at least 12 characters long.

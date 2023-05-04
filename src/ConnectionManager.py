@@ -115,6 +115,9 @@ class ConnectionManager:
                 self.password = ""
                 self.host = ""
                 self.port = -1
+                self.server.close()
+                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.server.settimeout(5)
             elif response == "Correct Password":
                 self.message = "Correct Password"
                 self.logged_in = True
@@ -156,6 +159,8 @@ class ConnectionManager:
             self.filenames.append(self.client_cipher.decrypt(filename_bytes).decode())
         
         self._renew_client_cipher()
+        
+        return self.filenames
 
     def upload(self):
         pass

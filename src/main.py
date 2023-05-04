@@ -11,6 +11,7 @@ import configparser
 import sys
 from ConnectionManager import ConnectionManager
 import time
+from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 
 
 class SplashScreen(Screen):
@@ -94,7 +95,7 @@ class LoginScreen(Screen):
                     buttons=[
                         MDRaisedButton(
                             text="Ok",
-                            on_press= lambda _: self.success_dialog.dismiss()
+                            on_press= lambda _: self.login_success()
                         )
                     ]
                 )
@@ -204,8 +205,19 @@ class LoginScreen(Screen):
             Clock.schedule_once(lambda _: self.login_attempt(), 2)
 
 class HomeScreen(Screen):
+    filelist = []
     def on_enter(self):
-        pass
+        self.filelist = connection.update()
+        for filename in self.filelist:
+            self.ids.main_list.add_widget(
+                OneLineIconListItem(
+                    IconLeftWidget(
+                            icon="github"
+                    ),
+                    text=filename,
+                    on_release=lambda _: print(filename),
+                )
+            )
             
 
 class ClientApp(MDApp):

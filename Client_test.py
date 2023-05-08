@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 import re
 import hashlib
+import binascii
 # Event codes to send to server
 # UPD : upload
 # DLD : download
@@ -133,7 +134,13 @@ if __name__ == '__main__':
         return cipher_padded
     
     def decrypt_with_padding(data: bytes, session_cipher):
-        return session_cipher.decrypt(base64.b32decode(data.decode().strip().encode()))
+        try:
+            return session_cipher.decrypt(base64.b32decode(data.decode().strip().encode()))
+        except binascii.Error as e:
+            print('data recieved')
+            print(data.decode())
+            print('end recieve')
+            raise e
 
     
     password = str(input("Password: "))
@@ -210,8 +217,8 @@ if __name__ == '__main__':
                 increment_nonce()
                 data_nonce = base64.b32encode(my_cipher.nonce)
                 cipher_data = session_cipher.encrypt(my_cipher.encrypt(data))
+                print(f'encrypting....\nclient nonce: {my_cipher.nonce}\nsession nonce:{session_cipher.nonce}')
                 renew_cipher()
-                # return to nonce 1
                 decrement_nonce()
                 decrement_nonce()
                 data_size = sys.getsizeof(cipher_data)
@@ -252,11 +259,13 @@ if __name__ == '__main__':
                 print(data_nonce)
                 increment_nonce()
                 data_ciphered = session_cipher.decrypt(server.recv(data_size))
+                print(f'decrypting...\nsession nonce {session_cipher.nonce}')
                 with open(f'{downloads_folder}/{file_to_download}.test', 'wb') as f:
                     f.write(data_ciphered)
                 increment_nonce()
                 renew_cipher(data_nonce)
                 file_data = my_cipher.decrypt(data_ciphered)
+                print(f'client nonce: {my_cipher.nonce}')
                 renew_cipher()
                 with open(f'{downloads_folder}/{file_to_download}', 'wb') as f:
                     f.write(file_data)
@@ -282,7 +291,10 @@ if __name__ == '__main__':
                     
 
             case "end":
-                pass
+                server.send(encrypt_with_padding(b'End', session_cipher))
+                increment_nonce()
+                server.close()
+
 
     
 

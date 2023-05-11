@@ -4,14 +4,18 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.screenmanager import NoTransition
 from kivy.core.window import Window
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.button import MDRaisedButton, MDIconButton, MDFlatButton
 import ipaddress as ipv4
 import os
 import configparser
 import sys
 from ConnectionManager import ConnectionManager
+from kivymd.uix.filemanager import MDFileManager
 import time
 from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
+from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.label import MDLabel
 
 
 class SplashScreen(Screen):
@@ -83,7 +87,7 @@ class LoginScreen(Screen):
 
     def login_success(self):
         self.success_dialog.dismiss()
-        self.manager.current = 'home'
+        self.manager.current = 'download'
 
     def login_attempt(self):
         login_value = connection.login(self.ip_address, self.port, self.password)
@@ -204,9 +208,100 @@ class LoginScreen(Screen):
             self.dialog.open()
             Clock.schedule_once(lambda _: self.login_attempt(), 2)
 
+class DownloadLocation(Screen):
+    dialog=None
+    def __init__(self, **kwargs):
+        super(DownloadLocation, self).__init__(**kwargs)
+        self.layout = MDFloatLayout()
+
+        self.title = MDLabel(text="Choose a Folder to Store Cloud Storage Files", pos_hint={'center_x': 0.5,'center_y': 0.9}, width=self.width, halign='center', font_style='H5')
+        self.layout.add_widget(self.title)
+
+        # Create a button to open the file manager
+        self.file_manager_button = MDRaisedButton(text="Select Folder", on_release=lambda _: self.show_file_manager(), pos_hint={'center_x': 0.5,'center_y': 0.8})
+        self.layout.add_widget(self.file_manager_button)
+
+        # Create a label to display the selected folder path
+        self.folder_path_label = MDLabel(text="No folder selected yet", pos_hint={'center_x': 0.5,'center_y': 0.5}, width=self.width, halign='center')
+        self.layout.add_widget(self.folder_path_label)
+
+        # Create a button to go to the next screen
+        self.next_button = MDRaisedButton(text="Next", on_release=self.go_to_next_screen, disabled=True, pos_hint={'center_x': 0.5,'center_y': 0.2})
+        self.layout.add_widget(self.next_button)
+
+        self.add_widget(self.layout)
+
+    def show_file_manager(self, *args):
+        # Create a file manager instance
+        self.file_manager = MDFileManager(
+            exit_manager=self.exit_file_manager,
+            select_path=self.select_folder_path,
+        )
+        self.file_manager.add_widget(
+            MDIconButton(
+                icon="folder-plus",
+                on_press=lambda _: self.show_dialog()
+            )
+                
+        )
+        if len(args) == 0:
+            self.file_manager.show(os.getcwd().replace('\\', '/')) 
+        else:
+            self.file_manager.show(args[0])
+    
+    def select_folder_path(self, path):
+        # Update the folder path label with the selected path
+        self.folder_path_label.text = f"Selected folder: {path}"
+
+        # Enable the "Next" button
+        self.next_button.disabled = False
+
+        self.exit_file_manager()
+    
+    def go_to_next_screen(self, *args):
+        # Get a reference to the screen manager
+        screen_manager = self.parent
+        connection.download_path = self.file_manager.current_path
+        # Go to the next screen in the screen manager
+        screen_manager.current = 'home'
+    
+    def exit_file_manager(self, *args):
+        # Close the file manager
+        self.file_manager.close()
+    
+    def dialog_ok(self):
+        folder_name = self.dialog.content_cls.ids.folder_name_field.text
+        folder_path = self.file_manager.current_path + "/" + folder_name
+        os.mkdir(folder_path)
+        self.exit_file_manager()
+        self.show_file_manager(folder_path)
+        self.dialog.dismiss()
+
+    def show_dialog(self):
+        if not self.dialog:
+            self.dialog = MDDialog(
+                title="Dialog Title",
+                type="custom",
+                content_cls=DialogContent(),
+                buttons=[
+                    MDFlatButton(
+                        text="CANCEL", on_release= lambda _: self.dialog.dismiss()
+                    ),
+                    MDFlatButton(
+                        text="OK", on_release= lambda _: self.dialog_ok()
+                    ),
+                ],
+            )
+        self.dialog.open()
+
+class DialogContent(MDBoxLayout):
+    pass
+
 class HomeScreen(Screen):
     filelist = []
-    def on_enter(self):
+    dialog = None
+    def on_pre_enter(self):
+        self.ids.main_list.clear_widgets()
         self.filelist = connection.update()
         for filename in self.filelist:
             self.ids.main_list.add_widget(
@@ -215,10 +310,31 @@ class HomeScreen(Screen):
                             icon="github"
                     ),
                     text=filename,
-                    on_release=lambda _: print(filename),
+                    on_release=lambda _: self.open_download_dialog(filename),
                 )
             )
+
+    def open_download_dialog(self, filename):
+        self.dialog = MDDialog(
+            text=f'Do you want to download "{filename}"?',
+            buttons=[
+                MDRaisedButton(
+                    text="No",
+                    on_press= lambda _: self.dialog.dismiss()
+                ),
+                MDRaisedButton(
+                    text="Yes",
+                    on_press= lambda _: self.yes_download(filename)
+                )
+                ],
+        )
+        self.dialog.open()
+
+    def yes_download(self, filename):
+        self.dialog.dismiss()
+        connection.download(filename)
             
+
 
 class ClientApp(MDApp):
     def build(self):
@@ -227,6 +343,7 @@ class ClientApp(MDApp):
         sm = ScreenManager(transition=NoTransition())
         sm.add_widget(SplashScreen(name="splash"))
         sm.add_widget(LoginScreen(name="login"))
+        sm.add_widget(DownloadLocation(name="download"))
         sm.add_widget(HomeScreen(name="home"))
         return sm
     

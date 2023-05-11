@@ -4,6 +4,17 @@
     MDLabel:
         text: "Splash"
 
+<DialogContent>
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: self.minimum_height
+
+    MDTextField:
+        id: folder_name_field
+        text: "New Folder"
+        hint_text: "Enter folder name"
+
 <LoginScreen>:
     MDFloatLayout:
         MDGridLayout:
@@ -73,6 +84,7 @@
                 size_hint: 1, 1
             MDTextField:
                 id: key
+                text: "aaaaaaaaaA1!"
                 size_hint: 2, 1
                 password: True
                 halign: 'center'
@@ -88,7 +100,7 @@
                 text: "Login"
                 on_press: root.button_press()
             MDLabel:
-                test: ""
+                text: ""
 
 <HomeScreen>:
     MDScrollView:

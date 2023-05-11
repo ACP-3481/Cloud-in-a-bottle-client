@@ -41,6 +41,8 @@ class ConnectionManager:
         self.filenames = None
         self.filename_b32_list = None
 
+        self.download_path = None
+
         main = threading.Thread(target=self.main_process)
         main.start()
 
@@ -177,8 +179,10 @@ class ConnectionManager:
     def upload(self):
         pass
 
-    def download(self):
-        pass
+    def download(self, filename):
+        if filename not in self.filenames:
+            return
+        
 
     def register_key(self, key: str):
         if len(key) < 12:

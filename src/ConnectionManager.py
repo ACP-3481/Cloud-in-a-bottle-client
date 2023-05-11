@@ -14,6 +14,7 @@ import hashlib
 import threading
 import time
 from typing import Optional
+import binascii
 
 
 class ConnectionManager:
@@ -62,9 +63,15 @@ class ConnectionManager:
         return cipher_padded
     
     def _decrypt_with_padding(self, data: bytes):
-        decrypted = self.session_cipher.decrypt(base64.b32decode(data.decode().strip().encode()))
-        self._increment_nonce()
-        return decrypted
+        try:
+            decrypted = self.session_cipher.decrypt(base64.b32decode(data.decode().strip().encode()))
+            self._increment_nonce()
+            return decrypted
+        except binascii.Error as e:
+            print('data recieved')
+            print(data.decode())
+            print('end recieve')
+            raise e
     
     def _renew_client_cipher(self, nonce : Optional[int]=None):
         if nonce is not None:
@@ -145,8 +152,13 @@ class ConnectionManager:
         
     def update(self):
         self.server.send(self._encrypt_with_padding(b'Update'))
-        update_size = int(self._decrypt_with_padding(self.server.recv(1024)).decode())
-        update_data = self._decrypt_with_padding(self.server.recv(update_size).decode())
+        data = self.server.recv(1024)
+        print('AAAAA')
+        print(data)
+        data = self._decrypt_with_padding(data)
+        print(data)
+        update_size = int(data.decode())
+        update_data = self._decrypt_with_padding(self.server.recv(update_size))
         self.update_dict = json.loads(update_data)
         
         self.filenames = []

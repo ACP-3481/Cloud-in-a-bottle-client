@@ -191,6 +191,7 @@ if __name__ == '__main__':
                 increment_nonce()
                 data_ciphered = session_cipher.decrypt(server.recv(data_size))
                 print(f'decrypting...\nsession nonce {session_cipher.nonce}')
+                print(f'data: {data_ciphered}')
                 with open(f'{downloads_folder}/{file_to_download}.test', 'wb') as f:
                     f.write(data_ciphered)
                 increment_nonce()

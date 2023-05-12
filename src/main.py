@@ -16,6 +16,78 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
+from android.storage import primary_external_storage_path
+from android.permissions import request_permissions, Permission
+request_permissions([
+    Permission.ACCEPT_HANDOVER,
+    Permission.ACCESS_BACKGROUND_LOCATION,
+    Permission.ACCESS_BLOBS_ACROSS_USERS,
+    Permission.ACCESS_CHECKIN_PROPERTIES,
+    Permission.ACCESS_COARSE_LOCATION,
+    Permission.ACCESS_FINE_LOCATION,
+    Permission.ACCESS_LOCATION_EXTRA_COMMANDS,
+    Permission.ACCESS_MEDIA_LOCATION,
+    Permission.ACCESS_NETWORK_STATE,
+    Permission.ACCESS_NOTIFICATION_POLICY,
+    Permission.ACCESS_WIFI_STATE,
+    Permission.ACCOUNT_MANAGER,
+    Permission.ACTIVITY_RECOGNITION,
+    Permission.ADD_VOICEMAIL,
+    Permission.ANSWER_PHONE_CALLS,
+    Permission.BATTERY_STATS,
+    Permission.BIND_ACCESSIBILITY_SERVICE,
+    Permission.BIND_APPWIDGET,
+    Permission.BIND_AUTOFILL_SERVICE,
+    Permission.BIND_CALL_REDIRECTION_SERVICE,
+    Permission.BIND_CARRIER_MESSAGING_CLIENT_SERVICE,
+    Permission.BIND_CARRIER_SERVICES,
+    Permission.BIND_COMPANION_DEVICE_SERVICE,
+    Permission.BIND_CONDITION_PROVIDER_SERVICE,
+    Permission.BIND_CONTROLS,
+    Permission.BIND_CREDENTIAL_PROVIDER_SERVICE,
+    Permission.BIND_DEVICE_ADMIN,
+    Permission.BIND_DREAM_SERVICE,
+    Permission.BIND_INCALL_SERVICE,
+    Permission.BIND_INPUT_METHOD,
+    Permission.BIND_MIDI_DEVICE_SERVICE,
+    Permission.BIND_NFC_SERVICE,
+    Permission.BIND_NOTIFICATION_LISTENER_SERVICE,
+    Permission.BIND_PRINT_SERVICE,
+    Permission.BIND_QUICK_ACCESS_WALLET_SERVICE,
+    Permission.BIND_QUICK_SETTINGS_TILE,
+    Permission.BIND_REMOTEVIEWS,
+    Permission.BIND_SCREENING_SERVICE,
+    Permission.BIND_TELECOM_CONNECTION_SERVICE,
+    Permission.BIND_TEXT_SERVICE,
+    Permission.BIND_TV_INPUT,
+    Permission.BIND_TV_INTERACTIVE_APP,
+    Permission.BIND_VISUAL_VOICEMAIL_SERVICE,
+    Permission.BIND_VOICE_INTERACTION,
+    Permission.BIND_VPN_SERVICE,
+    Permission.BIND_VR_LISTENER_SERVICE,
+    Permission.BIND_WALLPAPER,
+    Permission.BLUETOOTH,
+    Permission.BLUETOOTH_ADMIN,
+    Permission.BLUETOOTH_ADVERTISE,
+    Permission.BLUETOOTH_CONNECT,
+    Permission.BLUETOOTH_PRIVILEGED,
+    Permission.BLUETOOTH_SCAN,
+    Permission.BODY_SENSORS,
+    Permission.BODY_SENSORS_BACKGROUND,
+    Permission.BROADCAST_PACKAGE_REMOVED,
+    Permission.BROADCAST_SMS,
+    Permission.BROADCAST_STICKY,
+    Permission.BROADCAST_WAP_PUSH,
+    Permission.CALL_COMPANION_APP,
+    Permission.CALL_PHONE,
+    Permission.CAMERA,
+    Permission.CAPTURE_AUDIO_OUTPUT,
+    Permission.CHANGE_COMPONENT_ENABLED_STATE,
+    Permission.CHANGE_CONFIGURATION,
+    Permission.CHANGE_NETWORK_STATE,
+    Permission.INTERNET,
+    Permission.WRITE_EXTERNAL_STORAGE
+])
 
 
 class SplashScreen(Screen):
@@ -412,6 +484,15 @@ class ClientApp(MDApp):
     
     def on_stop(self):
         connection.quit = True
+
+    def key_input(self, window, key, scancode, codepoint, modifier):
+      if key == 27:
+         return True  # override the default behaviour
+      else:           # the key now does nothing
+         return False
+      
+    def on_pause(self):
+        return True
     
 
 if __name__ == '__main__':

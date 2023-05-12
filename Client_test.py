@@ -145,12 +145,10 @@ if __name__ == '__main__':
                 with open(file_path, 'rb') as file:
                     data = file.read()
                 increment_nonce()
-                increment_nonce()
                 data_nonce = base64.b32encode(my_cipher.nonce)
                 cipher_data = session_cipher.encrypt(my_cipher.encrypt(data))
                 print(f'encrypting....\nclient nonce: {my_cipher.nonce}\nsession nonce:{session_cipher.nonce}')
                 renew_cipher()
-                decrement_nonce()
                 decrement_nonce()
                 data_size = sys.getsizeof(cipher_data)
                 filename_nonce = base64.b32encode(my_cipher.nonce)

@@ -300,6 +300,7 @@ class DialogContent(MDBoxLayout):
 class HomeScreen(Screen):
     filelist = []
     dialog = None
+    file_dialog = None
     def on_pre_enter(self):
         self.ids.main_list.clear_widgets()
         self.filelist = connection.update()
@@ -307,7 +308,7 @@ class HomeScreen(Screen):
             self.ids.main_list.add_widget(
                 OneLineIconListItem(
                     IconLeftWidget(
-                            icon="github"
+                            icon="file"
                     ),
                     text=filename,
                     on_release=lambda _: self.open_download_dialog(filename),
@@ -333,6 +334,68 @@ class HomeScreen(Screen):
     def yes_download(self, filename):
         self.dialog.dismiss()
         connection.download(filename)
+
+    def upload_file(self):
+        self.show_file_manager()
+
+
+
+    def show_file_manager(self, *args):
+        # Create a file manager instance
+        self.file_manager = MDFileManager(
+            exit_manager=lambda _: self.file_manager.close(),
+            select_path=self.select_folder_path,
+        )
+        if len(args) == 0:
+            self.file_manager.show(os.getcwd().replace('\\', '/')) 
+        else:
+            self.file_manager.show(args[0])
+    
+    def select_folder_path(self, path):
+        # Update the folder path label with the selected path
+        self.file_manager.close()
+        if os.path.isfile(path):
+            filename = path[path.rindex("\\")+1:]
+            self.file_dialog = MDDialog(
+                text=f'Upload {filename}?',
+                buttons=[
+                    MDRaisedButton(
+                        text="No",
+                        on_press=lambda _: self.file_dialog.dismiss()
+                    ),
+                    MDRaisedButton(
+                        text="Yes",
+                        on_press=lambda _: self.upload_yes(path, filename)
+                    )
+                ]
+            )
+        else:
+            self.file_dialog = MDDialog(
+                text="Selected path is not a file",
+                buttons=[
+                    MDRaisedButton(
+                        text="Ok",
+                        on_press=lambda _: self.file_dialog.dismiss()
+                    )
+                ]
+            )
+        self.file_dialog.open()
+
+    def upload_yes(self, path, filename):
+        self.file_dialog.dismiss()
+        connection.upload(path)
+        self.ids.main_list.add_widget(
+                OneLineIconListItem(
+                    IconLeftWidget(
+                            icon="file"
+                    ),
+                    text=filename,
+                    on_release=lambda _: self.open_download_dialog(filename),
+                )
+            )
+        
+
+    
             
 
 

@@ -44,6 +44,8 @@ class ConnectionManager:
         self.download_path = None
         self.download_in_progress = False
         self.upload_in_progress = False
+        self.event_queue = []
+        self.event_queue_info = []
 
         main = threading.Thread(target=self.main_process)
         main.start()
@@ -136,7 +138,11 @@ class ConnectionManager:
         while self.logged_in:
             if self.quit:
                 break
-            pass
+            match self.event_queue[0]:
+                case "Download":
+                    pass
+                case "Upload":
+                    pass
 
 
     def login(self, ip, port, password):
@@ -175,7 +181,9 @@ class ConnectionManager:
         
         return self.filenames
 
-    def upload(self, upload_file: str):
+    def upload(self, upload_file: str, id):
+        self.event_queue.append("Upload")
+        self.event_queue_info.append([upload_file, id])
 
         self.upload_in_progress = True
         self.server.send(self._encrypt_with_padding(b'Upload'))
@@ -205,7 +213,10 @@ class ConnectionManager:
 
         self.upload_in_progress = False
 
-    def download(self, filename):
+    def download(self, filename, id):
+        self.event_queue.append("Download")
+        self.event_queue_info.append([filename, id])
+
         if filename not in self.filenames:
             # this has to pull up en error dialog on the screen
             return

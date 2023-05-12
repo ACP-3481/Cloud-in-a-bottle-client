@@ -16,6 +16,8 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
+from functools import partial
+import secrets
 
 
 class SplashScreen(Screen):
@@ -338,8 +340,6 @@ class HomeScreen(Screen):
     def upload_file(self):
         self.show_file_manager()
 
-
-
     def show_file_manager(self, *args):
         # Create a file manager instance
         self.file_manager = MDFileManager(
@@ -383,7 +383,9 @@ class HomeScreen(Screen):
 
     def upload_yes(self, path, filename):
         self.file_dialog.dismiss()
-        connection.upload(path)
+        id = secrets.token_hex(16)
+        connection.upload(path, id)
+        self.upload_event = Clock.schedule_interval(partial(self.check_upload, path, id), 0.5)
         self.ids.main_list.add_widget(
                 OneLineIconListItem(
                     IconLeftWidget(
@@ -393,6 +395,14 @@ class HomeScreen(Screen):
                     on_release=lambda _: self.open_download_dialog(filename),
                 )
             )
+    
+    def check_upload(self, path, id, *args):
+        still_in_queue = False
+        for i in connection.event_queue_info:
+            if i[1] == id:
+                still_in_queue = True
+                break
+
         
 
     

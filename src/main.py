@@ -16,6 +16,9 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
+from functools import partial
+import secrets
+import copy
 
 
 class SplashScreen(Screen):
@@ -108,7 +111,7 @@ class LoginScreen(Screen):
             if login_value[1] == "Connection Timed Out":
                 if not self.timeout_dialog:
                     self.timeout_dialog = MDDialog(
-                        text="Connection Timed Out\nAre the IP address and port correct?",
+                        text="Connection Timed Out\nAre the IP address and port correct?\nPlease try again",
                         buttons=[
                             MDRaisedButton(
                                 text="Ok",
@@ -301,19 +304,24 @@ class HomeScreen(Screen):
     filelist = []
     dialog = None
     file_dialog = None
+    events = {}
+
     def on_pre_enter(self):
         self.ids.main_list.clear_widgets()
         self.filelist = connection.update()
-        for filename in self.filelist:
-            self.ids.main_list.add_widget(
-                OneLineIconListItem(
-                    IconLeftWidget(
-                            icon="file"
-                    ),
-                    text=filename,
-                    on_release=lambda _: self.open_download_dialog(filename),
-                )
-            )
+        widget_list = []
+        for i in self.filelist:
+            Clock.schedule_once(partial(self.add_file_item, i), 0.1)
+
+    def add_file_item(self, name: str, *args):
+        widget = OneLineIconListItem(
+            IconLeftWidget(
+                icon='file'
+            ),
+            text=name,
+            on_release=lambda _: self.open_download_dialog(name)
+        )
+        self.ids.main_list.add_widget(widget)
 
     def open_download_dialog(self, filename):
         self.dialog = MDDialog(
@@ -333,12 +341,23 @@ class HomeScreen(Screen):
 
     def yes_download(self, filename):
         self.dialog.dismiss()
-        connection.download(filename)
+        id = secrets.token_hex(16)
+        connection.download(filename, id)
+        self.events[id] = Clock.schedule_interval(partial(self.check_download, id, filename), 0.5)
+
+    def check_download(self, id, filename, *args):
+        for i in connection.event_queue_info:
+            if i[1] == id:
+                still_in_queue = True
+                break
+        else:
+            still_in_queue = False
+        if not still_in_queue:
+            self.events[id].cancel()
+            self.events.pop(id)
 
     def upload_file(self):
         self.show_file_manager()
-
-
 
     def show_file_manager(self, *args):
         # Create a file manager instance
@@ -383,8 +402,22 @@ class HomeScreen(Screen):
 
     def upload_yes(self, path, filename):
         self.file_dialog.dismiss()
-        connection.upload(path)
-        self.ids.main_list.add_widget(
+        id = secrets.token_hex(16)
+        connection.upload(path, id)
+        self.events[id] = Clock.schedule_interval(partial(self.check_upload, id, filename), 0.5)
+        
+    
+    def check_upload(self, id, filename, *args):
+        for i in connection.event_queue_info:
+            if i[1] == id:
+                still_in_queue = True
+                break
+        else:
+            still_in_queue = False
+        if not still_in_queue:
+            self.events[id].cancel()
+            self.events.pop(id)
+            self.ids.main_list.add_widget(
                 OneLineIconListItem(
                     IconLeftWidget(
                             icon="file"
@@ -394,9 +427,6 @@ class HomeScreen(Screen):
                 )
             )
         
-
-    
-            
 
 
 class ClientApp(MDApp):

@@ -16,9 +16,11 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
+<<<<<<< dev
 from functools import partial
 import secrets
 import copy
+>>>>>>> android
 
 
 class SplashScreen(Screen):
@@ -442,6 +444,15 @@ class ClientApp(MDApp):
     
     def on_stop(self):
         connection.quit = True
+
+    def key_input(self, window, key, scancode, codepoint, modifier):
+      if key == 27:
+         return True  # override the default behaviour
+      else:           # the key now does nothing
+         return False
+      
+    def on_pause(self):
+        return True
     
 
 if __name__ == '__main__':

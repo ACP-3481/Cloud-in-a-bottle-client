@@ -305,22 +305,23 @@ class HomeScreen(Screen):
     dialog = None
     file_dialog = None
     events = {}
+
     def on_pre_enter(self):
         self.ids.main_list.clear_widgets()
         self.filelist = connection.update()
         widget_list = []
-        for i in range(len(self.filelist)):
-            text = copy.deepcopy(self.filelist[i])
-            widget = OneLineIconListItem(
-                IconLeftWidget(
-                    icon="file"
-                ),
-                text=self.filelist[i],
-                on_release=lambda _: self.open_download_dialog(copy.deepcopy(text)),
-            )
-            widget_list.append(widget)
-        for i in widget_list:
-            self.ids.main_list.add_widget(i)
+        for i in self.filelist:
+            Clock.schedule_once(partial(self.add_file_item, i), 0.1)
+
+    def add_file_item(self, name: str, *args):
+        widget = OneLineIconListItem(
+            IconLeftWidget(
+                icon='file'
+            ),
+            text=name,
+            on_release=lambda _: self.open_download_dialog(name)
+        )
+        self.ids.main_list.add_widget(widget)
 
     def open_download_dialog(self, filename):
         self.dialog = MDDialog(

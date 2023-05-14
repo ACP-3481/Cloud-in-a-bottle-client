@@ -16,11 +16,9 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
-<<<<<<< dev
 from functools import partial
 import secrets
 import copy
->>>>>>> android
 
 
 class SplashScreen(Screen):

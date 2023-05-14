@@ -44,6 +44,8 @@ class ConnectionManager:
         self.download_path = None
         self.download_in_progress = False
         self.upload_in_progress = False
+        self.event_queue = []
+        self.event_queue_info = []
 
         main = threading.Thread(target=self.main_process)
         main.start()
@@ -104,7 +106,17 @@ class ConnectionManager:
                     self.port = -1
                     continue
             
-            rsa_key = self.server.recv(1024)
+            try:
+                rsa_key = self.server.recv(1024)
+            except TimeoutError:
+                self.error = "Connection Timed Out"
+                self.host = ""
+                self.port = -1
+                self.server.close()
+                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.server.settimeout(5)
+                continue
+            
             rsa_key = RSA.import_key(rsa_key.decode().strip())
             rsa_encryptor = PKCS1_OAEP.new(rsa_key)
             self.session_key = secrets.token_bytes(16)
@@ -136,7 +148,73 @@ class ConnectionManager:
         while self.logged_in:
             if self.quit:
                 break
-            pass
+            event = "None"
+            if len(self.event_queue) > 0:
+                event = self.event_queue[0]
+            match event:
+                case "Download":
+                    filename, id = self.event_queue_info[0]
+                    
+                    if filename not in self.filenames:
+                        # this has to pull up en error dialog on the screen
+                        return
+                    file_to_download_b32 = self.filename_b32_list[self.filenames.index(filename)].encode()
+
+                    self.server.send(self._encrypt_with_padding(b'Download'))
+                    self.server.send(self._encrypt_with_padding(file_to_download_b32))
+
+                    data_hold = self.server.recv(1024)
+                    data_hold2 = self._decrypt_with_padding(data_hold)
+                    data_size, data_nonce_b32 = data_hold2.decode().split("|")
+                    data_size = int(data_size)
+                    data_nonce = base64.b32decode(data_nonce_b32)
+
+                    data_ciphered = self.session_cipher.decrypt(self.server.recv(data_size))
+                    self._increment_nonce()
+
+                    self._renew_client_cipher(data_nonce)
+                    file_data = self.client_cipher.decrypt(data_ciphered)
+                    self._renew_client_cipher()
+
+                    with open(f'{self.download_path}/{filename}', 'wb') as f:
+                        f.write(file_data)
+                    
+                    self.event_queue.pop(0)
+                    self.event_queue_info.pop(0)
+
+
+                case "Upload":
+                    upload_file, id = self.event_queue_info[0]
+
+                    self.server.send(self._encrypt_with_padding(b'Upload'))
+                    filename = upload_file[(upload_file.rindex("\\") + 1):]
+                    with open(upload_file, 'rb') as file:
+                        data = file.read()
+
+                    client_ciphered_data = self.client_cipher.encrypt(data)
+                    data_nonce = base64.b32encode(self.client_cipher.nonce)
+                    self._renew_client_cipher()
+
+                    self._increment_nonce()
+                    session_ciphered_data = self.session_cipher.encrypt(client_ciphered_data)
+                    self._decrement_nonce()
+
+                    data_size = sys.getsizeof(client_ciphered_data)
+                    ciphered_filename =  base64.b32encode(self.client_cipher.encrypt(filename.encode()))
+                    self.filenames.append(filename)
+                    self.filename_b32_list.append(ciphered_filename.decode())
+                    filename_nonce = base64.b32encode(self.client_cipher.nonce)
+                    self._renew_client_cipher()
+
+                    leading_message = self._encrypt_with_padding(ciphered_filename+b'|'+filename_nonce+b'|'+data_nonce+b'|'+str(data_size).encode())
+                    self.server.send(leading_message)
+                    self._increment_nonce()
+                    self.server.send(session_ciphered_data)
+
+                    self.event_queue.pop(0)
+                    self.event_queue_info.pop(0)
+                                
+
 
 
     def login(self, ip, port, password):
@@ -175,62 +253,15 @@ class ConnectionManager:
         
         return self.filenames
 
-    def upload(self, upload_file: str):
-
-        self.upload_in_progress = True
-        self.server.send(self._encrypt_with_padding(b'Upload'))
-        filename = upload_file[(upload_file.rindex("\\") + 1):]
-        with open(upload_file, 'rb') as file:
-            data = file.read()
-
-        client_ciphered_data = self.client_cipher.encrypt(data)
-        data_nonce = base64.b32encode(self.client_cipher.nonce)
-        self._renew_client_cipher()
-
-        self._increment_nonce()
-        session_ciphered_data = self.session_cipher.encrypt(client_ciphered_data)
-        self._decrement_nonce()
-
-        data_size = sys.getsizeof(client_ciphered_data)
-        ciphered_filename =  base64.b32encode(self.client_cipher.encrypt(filename.encode()))
-        self.filenames.append(filename)
-        self.filename_b32_list.append(ciphered_filename.decode())
-        filename_nonce = base64.b32encode(self.client_cipher.nonce)
-        self._renew_client_cipher()
-
-        leading_message = self._encrypt_with_padding(ciphered_filename+b'|'+filename_nonce+b'|'+data_nonce+b'|'+str(data_size).encode())
-        self.server.send(leading_message)
-        self._increment_nonce()
-        self.server.send(session_ciphered_data)
-
-        self.upload_in_progress = False
-
-    def download(self, filename):
-        if filename not in self.filenames:
-            # this has to pull up en error dialog on the screen
-            return
-        file_to_download_b32 = self.filename_b32_list[self.filenames.index(filename)].encode()
-
-        self.server.send(self._encrypt_with_padding(b'Download'))
-        self.server.send(self._encrypt_with_padding(file_to_download_b32))
-
-        data_hold = self.server.recv(1024)
-        data_hold2 = self._decrypt_with_padding(data_hold)
-        data_size, data_nonce_b32 = data_hold2.decode().split("|")
-        data_size = int(data_size)
-        data_nonce = base64.b32decode(data_nonce_b32)
-
-        data_ciphered = self.session_cipher.decrypt(self.server.recv(data_size))
-        self._increment_nonce()
-
-        self._renew_client_cipher(data_nonce)
-        file_data = self.client_cipher.decrypt(data_ciphered)
-        self._renew_client_cipher()
-
-        with open(f'{self.download_path}/{filename}', 'wb') as f:
-            f.write(file_data)
+    def upload(self, upload_file: str, id):
         
+        self.event_queue_info.append([upload_file, id])
+        self.event_queue.append("Upload")
+
+    def download(self, filename, id):
         
+        self.event_queue_info.append([filename, id])
+        self.event_queue.append("Download")
 
     def register_key(self, key: str):
         if len(key) < 12:

@@ -16,78 +16,11 @@ from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
-from android.storage import primary_external_storage_path
-from android.permissions import request_permissions, Permission
-request_permissions([
-    Permission.ACCEPT_HANDOVER,
-    Permission.ACCESS_BACKGROUND_LOCATION,
-    Permission.ACCESS_BLOBS_ACROSS_USERS,
-    Permission.ACCESS_CHECKIN_PROPERTIES,
-    Permission.ACCESS_COARSE_LOCATION,
-    Permission.ACCESS_FINE_LOCATION,
-    Permission.ACCESS_LOCATION_EXTRA_COMMANDS,
-    Permission.ACCESS_MEDIA_LOCATION,
-    Permission.ACCESS_NETWORK_STATE,
-    Permission.ACCESS_NOTIFICATION_POLICY,
-    Permission.ACCESS_WIFI_STATE,
-    Permission.ACCOUNT_MANAGER,
-    Permission.ACTIVITY_RECOGNITION,
-    Permission.ADD_VOICEMAIL,
-    Permission.ANSWER_PHONE_CALLS,
-    Permission.BATTERY_STATS,
-    Permission.BIND_ACCESSIBILITY_SERVICE,
-    Permission.BIND_APPWIDGET,
-    Permission.BIND_AUTOFILL_SERVICE,
-    Permission.BIND_CALL_REDIRECTION_SERVICE,
-    Permission.BIND_CARRIER_MESSAGING_CLIENT_SERVICE,
-    Permission.BIND_CARRIER_SERVICES,
-    Permission.BIND_COMPANION_DEVICE_SERVICE,
-    Permission.BIND_CONDITION_PROVIDER_SERVICE,
-    Permission.BIND_CONTROLS,
-    Permission.BIND_CREDENTIAL_PROVIDER_SERVICE,
-    Permission.BIND_DEVICE_ADMIN,
-    Permission.BIND_DREAM_SERVICE,
-    Permission.BIND_INCALL_SERVICE,
-    Permission.BIND_INPUT_METHOD,
-    Permission.BIND_MIDI_DEVICE_SERVICE,
-    Permission.BIND_NFC_SERVICE,
-    Permission.BIND_NOTIFICATION_LISTENER_SERVICE,
-    Permission.BIND_PRINT_SERVICE,
-    Permission.BIND_QUICK_ACCESS_WALLET_SERVICE,
-    Permission.BIND_QUICK_SETTINGS_TILE,
-    Permission.BIND_REMOTEVIEWS,
-    Permission.BIND_SCREENING_SERVICE,
-    Permission.BIND_TELECOM_CONNECTION_SERVICE,
-    Permission.BIND_TEXT_SERVICE,
-    Permission.BIND_TV_INPUT,
-    Permission.BIND_TV_INTERACTIVE_APP,
-    Permission.BIND_VISUAL_VOICEMAIL_SERVICE,
-    Permission.BIND_VOICE_INTERACTION,
-    Permission.BIND_VPN_SERVICE,
-    Permission.BIND_VR_LISTENER_SERVICE,
-    Permission.BIND_WALLPAPER,
-    Permission.BLUETOOTH,
-    Permission.BLUETOOTH_ADMIN,
-    Permission.BLUETOOTH_ADVERTISE,
-    Permission.BLUETOOTH_CONNECT,
-    Permission.BLUETOOTH_PRIVILEGED,
-    Permission.BLUETOOTH_SCAN,
-    Permission.BODY_SENSORS,
-    Permission.BODY_SENSORS_BACKGROUND,
-    Permission.BROADCAST_PACKAGE_REMOVED,
-    Permission.BROADCAST_SMS,
-    Permission.BROADCAST_STICKY,
-    Permission.BROADCAST_WAP_PUSH,
-    Permission.CALL_COMPANION_APP,
-    Permission.CALL_PHONE,
-    Permission.CAMERA,
-    Permission.CAPTURE_AUDIO_OUTPUT,
-    Permission.CHANGE_COMPONENT_ENABLED_STATE,
-    Permission.CHANGE_CONFIGURATION,
-    Permission.CHANGE_NETWORK_STATE,
-    Permission.INTERNET,
-    Permission.WRITE_EXTERNAL_STORAGE
-])
+<<<<<<< dev
+from functools import partial
+import secrets
+import copy
+>>>>>>> android
 
 
 class SplashScreen(Screen):
@@ -180,7 +113,7 @@ class LoginScreen(Screen):
             if login_value[1] == "Connection Timed Out":
                 if not self.timeout_dialog:
                     self.timeout_dialog = MDDialog(
-                        text="Connection Timed Out\nAre the IP address and port correct?",
+                        text="Connection Timed Out\nAre the IP address and port correct?\nPlease try again",
                         buttons=[
                             MDRaisedButton(
                                 text="Ok",
@@ -373,19 +306,24 @@ class HomeScreen(Screen):
     filelist = []
     dialog = None
     file_dialog = None
+    events = {}
+
     def on_pre_enter(self):
         self.ids.main_list.clear_widgets()
         self.filelist = connection.update()
-        for filename in self.filelist:
-            self.ids.main_list.add_widget(
-                OneLineIconListItem(
-                    IconLeftWidget(
-                            icon="file"
-                    ),
-                    text=filename,
-                    on_release=lambda _: self.open_download_dialog(filename),
-                )
-            )
+        widget_list = []
+        for i in self.filelist:
+            Clock.schedule_once(partial(self.add_file_item, i), 0.1)
+
+    def add_file_item(self, name: str, *args):
+        widget = OneLineIconListItem(
+            IconLeftWidget(
+                icon='file'
+            ),
+            text=name,
+            on_release=lambda _: self.open_download_dialog(name)
+        )
+        self.ids.main_list.add_widget(widget)
 
     def open_download_dialog(self, filename):
         self.dialog = MDDialog(
@@ -405,12 +343,23 @@ class HomeScreen(Screen):
 
     def yes_download(self, filename):
         self.dialog.dismiss()
-        connection.download(filename)
+        id = secrets.token_hex(16)
+        connection.download(filename, id)
+        self.events[id] = Clock.schedule_interval(partial(self.check_download, id, filename), 0.5)
+
+    def check_download(self, id, filename, *args):
+        for i in connection.event_queue_info:
+            if i[1] == id:
+                still_in_queue = True
+                break
+        else:
+            still_in_queue = False
+        if not still_in_queue:
+            self.events[id].cancel()
+            self.events.pop(id)
 
     def upload_file(self):
         self.show_file_manager()
-
-
 
     def show_file_manager(self, *args):
         # Create a file manager instance
@@ -455,8 +404,22 @@ class HomeScreen(Screen):
 
     def upload_yes(self, path, filename):
         self.file_dialog.dismiss()
-        connection.upload(path)
-        self.ids.main_list.add_widget(
+        id = secrets.token_hex(16)
+        connection.upload(path, id)
+        self.events[id] = Clock.schedule_interval(partial(self.check_upload, id, filename), 0.5)
+        
+    
+    def check_upload(self, id, filename, *args):
+        for i in connection.event_queue_info:
+            if i[1] == id:
+                still_in_queue = True
+                break
+        else:
+            still_in_queue = False
+        if not still_in_queue:
+            self.events[id].cancel()
+            self.events.pop(id)
+            self.ids.main_list.add_widget(
                 OneLineIconListItem(
                     IconLeftWidget(
                             icon="file"
@@ -466,9 +429,6 @@ class HomeScreen(Screen):
                 )
             )
         
-
-    
-            
 
 
 class ClientApp(MDApp):

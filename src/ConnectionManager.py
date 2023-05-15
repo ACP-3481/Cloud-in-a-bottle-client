@@ -7,8 +7,6 @@ import base64
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 import secrets
-import tkinter as tk
-from tkinter import filedialog
 import re
 import hashlib
 import threading

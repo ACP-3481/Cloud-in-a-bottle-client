@@ -7,8 +7,6 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDRaisedButton, MDIconButton, MDFlatButton
 import ipaddress as ipv4
 import os
-import configparser
-import sys
 from ConnectionManager import ConnectionManager
 from kivymd.uix.filemanager import MDFileManager
 import time
@@ -18,7 +16,6 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
 from functools import partial
 import secrets
-import copy
 
 
 class SplashScreen(Screen):

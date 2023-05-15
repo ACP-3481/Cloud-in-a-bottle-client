@@ -187,17 +187,16 @@ class LoginScreen(Screen):
             self.error = connection.register_key(self.ids.key.text)
             if self.error != "Key registered successfully":
                 index = self.key_errors.index(self.error)
-                match index:
-                    case 0:
-                        self.length_error_dialog.open()
-                    case 1:
-                        self.l_case_dialog.open()
-                    case 2:
-                        self.u_case_dialog.open()
-                    case 3:
-                        self.num_error_dialog.open()
-                    case 4:
-                        self.spec_error_dialog.open()
+                if index == 0:
+                    self.length_error_dialog.open()
+                elif index == 1:
+                    self.l_case_dialog.open()
+                elif index == 2:
+                    self.u_case_dialog.open()
+                elif index == 3:
+                    self.num_error_dialog.open()
+                elif index == 4:
+                    self.spec_error_dialog.open()
                 break
             else:
                 self.error = ""

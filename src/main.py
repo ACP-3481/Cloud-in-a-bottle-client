@@ -9,7 +9,6 @@ import ipaddress as ipv4
 import os
 from ConnectionManager import ConnectionManager
 from kivymd.uix.filemanager import MDFileManager
-import time
 from kivymd.uix.list import OneLineIconListItem, IconLeftWidget
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -428,7 +427,6 @@ class HomeScreen(Screen):
 class ClientApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        Window.size = (324, 576)
         sm = ScreenManager(transition=NoTransition())
         sm.add_widget(SplashScreen(name="splash"))
         sm.add_widget(LoginScreen(name="login"))

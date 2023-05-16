@@ -17,12 +17,7 @@ from functools import partial
 import secrets
 
 
-class SplashScreen(Screen):
-    def on_enter(self, *args):
-        Clock.schedule_once(self.switch_to_home, 3)
 
-    def switch_to_home(self, dt):
-        self.manager.current = 'login'
 
 class LoginScreen(Screen):
     dialog = None
@@ -426,9 +421,10 @@ class HomeScreen(Screen):
 
 class ClientApp(MDApp):
     def build(self):
+        global connection
+        connection = ConnectionManager()
         self.theme_cls.theme_style = "Dark"
         sm = ScreenManager(transition=NoTransition())
-        sm.add_widget(SplashScreen(name="splash"))
         sm.add_widget(LoginScreen(name="login"))
         sm.add_widget(DownloadLocation(name="download"))
         sm.add_widget(HomeScreen(name="home"))
@@ -446,7 +442,4 @@ class ClientApp(MDApp):
     def on_pause(self):
         return True
     
-
-if __name__ == '__main__':
-    connection = ConnectionManager()
-    ClientApp().run()
+ClientApp().run()

@@ -421,8 +421,6 @@ class HomeScreen(Screen):
 
 class ClientApp(MDApp):
     def build(self):
-        global connection
-        connection = ConnectionManager()
         self.theme_cls.theme_style = "Dark"
         sm = ScreenManager(transition=NoTransition())
         sm.add_widget(LoginScreen(name="login"))
@@ -442,4 +440,5 @@ class ClientApp(MDApp):
     def on_pause(self):
         return True
     
+connection = ConnectionManager()
 ClientApp().run()
